@@ -1,106 +1,117 @@
-import React, { useState } from 'react';
-import './MatchingLine.css'; // Make sure to create this CSS file
+import React, { useState, useEffect, useRef } from 'react';
 
-const MatchingLine = () => {
-  const [matchedPairs, setMatchedPairs] = useState([]);
+const items = [
+  { id: 1, label: 'A' },
+  { id: 2, label: 'B' },
+  { id: 3, label: 'C' },
+  { id: 4, label: 'D' },
+  // Add more items as needed
+];
 
-  const questions = ['Question 1', 'Question 2', 'Question 3'];
-  const answers = ['Answer A', 'Answer B', 'Answer C'];
+const MatchingGame = () => {
+  const [shuffledItems, setShuffledItems] = useState([]);
+  const [selectedItemIds, setSelectedItemIds] = useState([]);
+  const [matchedItemIds, setMatchedItemIds] = useState([]);
+  const canvasRef = useRef(null);
 
-  const handleDrop = (question, answer) => {
-    // Add the matched pair to the state
-    setMatchedPairs([...matchedPairs, { question, answer }]);
+  useEffect(() => {
+    // Shuffle the items array and set it to state on component mount
+    shuffleItems();
+  }, []);
+
+  useEffect(() => {
+    // Draw lines after each render
+    drawLines();
+  });
+
+  const shuffleItems = () => {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setShuffledItems(shuffled);
   };
 
-  const removeMatch = (question) => {
-    // Remove the matched pair from the state
-    setMatchedPairs(matchedPairs.filter((pair) => pair.question !== question));
+  const handleItemClick = (itemId) => {
+    // Ignore clicks if the item is already matched or two items are already selected
+    if (selectedItemIds.length === 2 || selectedItemIds.includes(itemId)) {
+      return;
+    }
+
+    setSelectedItemIds((prev) => [...prev, itemId]);
+
+    // Check for a match after a short delay (to allow the user to see the second selected item)
+    if (selectedItemIds.length === 1) {
+      setTimeout(() => checkForMatch(itemId), 500);
+    }
+  };
+
+  const checkForMatch = (itemId) => {
+    const [firstId, secondId] = selectedItemIds;
+    if (shuffledItems[firstId - 1].label === shuffledItems[itemId - 1].label) {
+      // Match found
+      setMatchedItemIds((prev) => [...prev, firstId, itemId]);
+      setSelectedItemIds([]);
+    } else {
+      // No match, reset selected items after a short delay (to allow the user to see the second selected item)
+      setTimeout(() => setSelectedItemIds([]), 500);
+    }
+  };
+
+  const drawLines = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (matchedItemIds.length >= 2) {
+      // Draw lines for matched items
+      const firstItem = shuffledItems[matchedItemIds[0] - 1];
+      const secondItem = shuffledItems[matchedItemIds[1] - 1];
+
+      const firstItemElement = document.getElementById(`item-${firstItem.id}`);
+      const secondItemElement = document.getElementById(`item-${secondItem.id}`);
+
+      const firstItemRect = firstItemElement.getBoundingClientRect();
+      const secondItemRect = secondItemElement.getBoundingClientRect();
+
+      const canvasRect = canvas.getBoundingClientRect();
+
+      const startX = firstItemRect.left + firstItemRect.width / 2 - canvasRect.left;
+      const startY = firstItemRect.top + firstItemRect.height / 2 - canvasRect.top;
+
+      const endX = secondItemRect.left + secondItemRect.width / 2 - canvasRect.left;
+      const endY = secondItemRect.top + secondItemRect.height / 2 - canvasRect.top;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = 'green';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
   };
 
   return (
     <div>
-      <div className="matching-container">
-        <div className="questions">
-          {questions.map((question, index) => (
-            <div
-              key={index}
-              className="question-box"
-              onDrop={() => handleDrop(question, '')}
-              onDragOver={(e) => e.preventDefault()}
-            >
-              {question}
-            </div>
-          ))}
-        </div>
-        <div className="answers">
-          {answers.map((answer, index) => (
-            <div
-              key={index}
-              className="answer-box"
-              onDrop={() => handleDrop('', answer)}
-              onDragOver={(e) => e.preventDefault()}
-            >
-              {answer}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="matching-lines">
-        {matchedPairs.map((pair, index) => (
-          <MatchingLineConnector
-            key={index}
-            question={pair.question}
-            answer={pair.answer}
-            onRemove={() => removeMatch(pair.question)}
-          />
+      <h1>Matching Game</h1>
+      <div className="game-board">
+        {shuffledItems.map((item) => (
+          <div
+            key={item.id}
+            id={`item-${item.id}`}
+            className={`game-item ${selectedItemIds.includes(item.id) ? 'selected' : ''} ${
+              matchedItemIds.includes(item.id) ? 'matched' : ''
+            }`}
+            onClick={() => handleItemClick(item.id)}
+          >
+            {selectedItemIds.includes(item.id) || matchedItemIds.includes(item.id) ? item.label : '?'}
+          </div>
         ))}
       </div>
+      <canvas ref={canvasRef} className="game-canvas" />
     </div>
   );
 };
 
-const MatchingLineConnector = ({ question, answer, onRemove }) => {
-  const questionRef = React.createRef();
-  const answerRef = React.createRef();
-
-  const drawLine = () => {
-    const questionRect = questionRef.current.getBoundingClientRect();
-    const answerRect = answerRef.current.getBoundingClientRect();
-
-    const startX = questionRect.left + questionRect.width / 2;
-    const startY = questionRect.top + questionRect.height / 2;
-    const endX = answerRect.left + answerRect.width / 2;
-    const endY = answerRect.top + answerRect.height / 2;
-
-    const line = document.createElement('div');
-    line.className = 'matching-line';
-    line.style.position = 'absolute';
-    line.style.left = startX + 'px';
-    line.style.top = startY + 'px';
-    line.style.width = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2) + 'px';
-    line.style.transformOrigin = '0 0';
-    line.style.transform = `rotate(${Math.atan2(endY - startY, endX - startX)}rad)`;
-
-    document.body.appendChild(line);
-
-    return line;
-  };
-
-  const line = drawLine();
-
-  return (
-    <React.Fragment>
-      <div ref={questionRef} className="hidden-element">
-        {question}
-      </div>
-      <div ref={answerRef} className="hidden-element">
-        {answer}
-      </div>
-      <div className="matching-remove" onClick={onRemove}>
-        X
-      </div>
-    </React.Fragment>
-  );
-};
-
-export default MatchingLine;
+export default MatchingGame;
