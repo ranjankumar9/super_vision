@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ReactFlow, { addEdge, removeElements } from 'react-flow-renderer';
+import ReactFlow from 'react-flow-renderer';
 
 const NodeBetweenButtons = () => {
   const [elements, setElements] = useState([]);
@@ -17,22 +17,23 @@ const NodeBetweenButtons = () => {
     setCount((prevCount) => prevCount + 1);
   };
 
-  const onRemoveButtonClick = () => {
-    setElements((prevElements) => removeElements(elements, prevElements));
+  const onElementsRemove = (elementsToRemove) => {
+    setElements((prevElements) =>
+      prevElements.filter((element) => !elementsToRemove.includes(element))
+    );
   };
 
   const onConnect = (params) => {
-    setElements((prevElements) => addEdge(params, prevElements));
+    setElements((prevElements) => [...prevElements, params]);
   };
 
   return (
     <div>
       <div style={{ marginBottom: '10px' }}>
         <button onClick={onAddButtonClick}>Add Node</button>
-        <button onClick={onRemoveButtonClick}>Remove Node</button>
       </div>
       <div style={{ height: '400px', border: '1px solid #ddd' }}>
-        <ReactFlow elements={elements} onConnect={onConnect} />
+        <ReactFlow elements={elements} onElementsRemove={onElementsRemove} onConnect={onConnect} />
       </div>
     </div>
   );
