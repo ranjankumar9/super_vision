@@ -1,42 +1,29 @@
-/* MatchingLine.css */
-
-.matching-container {
+.button-line-container {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  align-items: center;
 }
 
-.questions,
-.answers {
-  display: flex;
-  flex-direction: column;
+.btn1,
+.btn2 {
+  padding: 10px 20px;
+  font-size: 16px;
 }
 
-.question-box,
-.answer-box {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin: 5px;
-  cursor: pointer;
+.btn1 {
+  background-color: #007bff;
+  color: white;
 }
 
-.matching-lines {
-  position: relative;
+.btn2 {
+  background-color: #28a745;
+  color: white;
 }
 
-.matching-line {
-  border: 1px solid black;
-  pointer-events: none;
+.line {
+  margin: 0 10px;
 }
 
-.hidden-element {
-  position: absolute;
-  left: -9999px;
-}
-
-.matching-remove {
-  cursor: pointer;
-  color: red;
-  font-weight: bold;
-  margin-left: 10px;
+.line line {
+  stroke: #333;
+  stroke-width: 2;
 }
